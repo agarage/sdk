@@ -1,28 +1,16 @@
-## Usage
+## Agarage Platform R&D
 
-```bash
-$ npm install # or pnpm install or yarn install
-```
+Experimental Web app framework with host + plugin architecture.
 
-### Learn more on the [Solid Website](https://solidjs.com) and come chat with us on our [Discord](https://discord.com/invite/solidjs)
+### Docs
+- Overview: `docs/overview.md`
+- Quickstart: `docs/quickstart.md`
+- Architecture: `docs/architecture.md`
+- APIs: `docs/apis.md`
 
-## Available Scripts
+### Scripts
+- `bun dev`: start dev servers for the app and plugins
+- `bun run build`: type-check and build
+- `bun run preview`: preview production build
 
-In the project directory, you can run:
-
-### `npm run dev`
-
-Runs the app in the development mode.<br>
-Open [http://localhost:5173](http://localhost:5173) to view it in the browser.
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder.<br>
-It correctly bundles Solid in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
-
-## Deployment
-
-Learn more about deploying your application with the [documentations](https://vite.dev/guide/static-deploy.html)
+See Quickstart for running example plugins.
