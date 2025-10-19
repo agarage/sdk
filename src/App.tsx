@@ -2,6 +2,8 @@ import { toposortReverse } from '@n1ru4l/toposort';
 import { createSignal, onMount } from 'solid-js';
 import type { PluginJson } from './lib/plugin-core';
 import { PLUGINS_TO_INSTALL } from './data/plugins';
+import { createHost } from './lib/host';
+import type { RegisteredPluginContext } from './lib/types';
 
 export type PluginToInstall = {
   url: string;
@@ -13,18 +15,35 @@ export type InstalledPlugin = {
   json: PluginJson;
 }
 
+const host = createHost({
+  allowedOrigins: ["http://localhost:5174", "http://localhost:5175", "http://localhost:5174/", "http://localhost:5175/"],
+});
+
 function PluginFrame(props: { url: string, name: string }) {
   const [loaded, setLoaded] = createSignal(false);
+  const [registeredPluginContext, setRegisteredPluginContext] = createSignal<RegisteredPluginContext | undefined>(undefined);
 
   let iframe: HTMLIFrameElement | undefined;
 
-  const sendHelloToPlugin = () => {
+  const sendTime = () => {
+    const pluginContext = registeredPluginContext();
+    if(!pluginContext) return;
+
+    pluginContext.emit('host.onReceiveTime', new Date().toISOString());
+  }
+
+  const handleLoad = () => {
     if (!iframe || !iframe.contentWindow) return;
 
-    iframe.contentWindow.postMessage({
-      type: "say-hello",
-      message: "Hello from the host",
-    }, "*");
+    setLoaded(true);
+
+    const registeredPluginContext = host.registerPlugin(
+      props.name,
+      iframe.contentWindow!,
+      props.url,
+    );
+    setRegisteredPluginContext(registeredPluginContext);
+    host.logger.info(`${props.name} plugin registered.`);
   }
 
   return (
@@ -41,10 +60,11 @@ function PluginFrame(props: { url: string, name: string }) {
           </div>
         )}
         <iframe
+          id={`iframe-plugin-${props.name}`}
           ref={iframe}
           src={props.url}
           class="w-full h-full"
-          onLoad={() => setLoaded(true)}
+          onLoad={handleLoad}
           style={ !loaded()
             ? { visibility: "hidden" }
             : undefined
@@ -52,8 +72,8 @@ function PluginFrame(props: { url: string, name: string }) {
         />
       </div>
 
-      <button class="px-4 py-2 bg-green-500 text-white rounded" onClick={sendHelloToPlugin}>
-        Say Hello to {props.url}
+      <button class="px-4 py-2 bg-green-500 text-white rounded" onClick={sendTime}>
+        Send Time to {props.name}
       </button>
     </div>
   );
@@ -87,16 +107,35 @@ function InstalledPlugins(props: { plugins: InstalledPlugin[] }) {
   );
 }
 
+function RandomNumbers() {
+  const [randomNumbers, setRandomNumbers] = createSignal<number[]>([]);
+
+  host.on('onReceiveRandomNumber', (number: number) => {
+    setRandomNumbers(prev => [...prev, number]);
+  });
+
+  return (
+    <div class="flex flex-col gap-4 border p-4">
+      <h2 class="text-lg font-bold">Random Numbers</h2>
+
+      <div class="flex flex-col gap-2">
+        {randomNumbers().map(number => (
+          <p class="text-sm text-gray-500">{number}</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [plugins, setPlugins] = createSignal<InstalledPlugin[]>([]);
   const deps = new Map<string, Set<string>>();
 
   const loadPlugins = async () => {
-    console.log("Loading plugins");
+    host.logger.info("Loading plugins");
 
     const loadedPluginJsons = new Map<string, PluginJson & { url: string }>();
 
-    console.log("Fetching plugin.json files");
     for await (const plugin of PLUGINS_TO_INSTALL) {
       const res = await fetch(`${plugin.url}/plugin.json`);
       const pluginJson = await res.json();
@@ -105,11 +144,10 @@ function App() {
       const depNames = Object.keys(pluginJson.dependencies || {});
       deps.set(pluginJson.name, new Set(depNames));
 
-      console.log(`${pluginJson.name} plugin.json loaded.`);
-      // console.log(`${JSON.stringify(pluginJson)}`);
+      host.logger.info(`${pluginJson.name} plugin.json loaded.`);
     }
 
-    console.log("Sorting and loading plugins");
+    host.logger.debug("Sorting and loading plugins");
 
     const sortedPlugins = toposortReverse(deps);
     
@@ -133,8 +171,7 @@ function App() {
           setPlugins(prev => [...prev, plugin]);
         }
 
-        console.log(`${plugin.name} loaded.`);
-        // console.log(`${JSON.stringify(plugin)}`);
+        host.logger.info(`${plugin.name} loaded.`);
       }
     }
   }
@@ -142,9 +179,15 @@ function App() {
   const handleMessages = () => {
     window.addEventListener("message", (event) => {
       if (event.data.type === "say-hello") {
-        console.log(event.data.message);
+        host.logger.info(event.data.message);
       }
     });
+  }
+
+  const emitHostEvents = () => {
+    // Host can emit events that plugins can listen to
+    // Example: host.emit('hostReady', { version: '1.0.0' });
+    host.logger.info('Host ready, plugins can now listen to host events');
   }
 
 
@@ -152,6 +195,7 @@ function App() {
     loadPlugins();
 
     handleMessages();
+    emitHostEvents();
   });
   
 
@@ -163,15 +207,17 @@ function App() {
 
       <InstalledPlugins plugins={plugins()} />
 
-      <div class="flex flex-col gap-4 border p-4">
+      <div class="flex flex-col gap-4 border p-4 h-128">
         <h2 class="text-lg font-bold">Plugin Frames</h2>
 
-        <div class="flex gap-x-4 space-x-4">
+        <div class="flex gap-x-4 space-x-4 h-full">
           {plugins().map(plugin => (
             <PluginFrame url={plugin.url} name={plugin.name} />
           ))}
         </div>
       </div>
+
+      <RandomNumbers />
     </div>
   )
 }
