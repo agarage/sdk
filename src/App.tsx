@@ -1,19 +1,11 @@
 import { toposortReverse } from '@n1ru4l/toposort';
 import { createSignal, onMount } from 'solid-js';
-import type { PluginJson } from './lib/plugin-core';
 import { PLUGINS_TO_INSTALL } from './data/plugins';
 import { createHost } from './lib/host';
+import type { PluginJson } from './lib/plugin-core';
 import type { RegisteredPluginContext } from './lib/types';
-
-export type PluginToInstall = {
-  url: string;
-}
-
-export type InstalledPlugin = {
-  name: string;
-  url: string;
-  json: PluginJson;
-}
+import { InstalledPlugins } from './components/InstalledPlugins';
+import type { InstalledPlugin } from './types';
 
 const host = createHost({
   allowedOrigins: ["http://localhost:5174", "http://localhost:5175", "http://localhost:5174/", "http://localhost:5175/"],
@@ -75,34 +67,6 @@ function PluginFrame(props: { url: string, name: string }) {
       <button class="px-4 py-2 bg-green-500 text-white rounded" onClick={sendTime}>
         Send Time to {props.name}
       </button>
-    </div>
-  );
-}
-
-function PluginCard(props: { plugin: InstalledPlugin }) {
-  const dependencies = Object.keys(props.plugin.json.dependencies || {});
-
-  return (
-    <div class="flex flex-col gap-2">
-      <h3 class="text-lg font-bold">{props.plugin.json.name} v{props.plugin.json.version}</h3>
-      <p class="text-sm text-gray-500">{props.plugin.json.description}</p>
-      {dependencies.length > 0 && (
-        <p class="text-sm text-gray-500">Dependencies: {dependencies.join(', ')}</p>
-      )}
-    </div>
-  );
-}
-
-function InstalledPlugins(props: { plugins: InstalledPlugin[] }) {
-  return (
-    <div class="flex flex-col gap-4 border p-4">
-      <h2 class="text-lg font-bold">Installed Plugins</h2>
-      
-      <div class="flex gap-x-4 border p-4 space-x-4">
-        {props.plugins.map(plugin => (
-          <PluginCard plugin={plugin} />
-        ))}
-      </div>
     </div>
   );
 }
@@ -189,7 +153,6 @@ function App() {
     // Example: host.emit('hostReady', { version: '1.0.0' });
     host.logger.info('Host ready, plugins can now listen to host events');
   }
-
 
   onMount(async () => {
     loadPlugins();
