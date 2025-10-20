@@ -21,7 +21,7 @@ export interface PluginRegistration {
 
 export interface AppSDK {
   /** Registers a plugin iframe. */
-  registerPlugin: (namespace: string, window: Window, origin: string) => RegisteredPluginContext;
+  registerPlugin: (namespace: string, window: Window, origin: string) => void;
   /** Registers a handler for the app itself. */
   handle: (requestType: string, handler: HandlerFn) => void;
   /** Sends a request to a plugin. */

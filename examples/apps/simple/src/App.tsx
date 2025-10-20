@@ -20,9 +20,7 @@ function App() {
         setPlugins(prev => [...prev, plugin]);
         app.logger.info(`${plugin.name} plugin loaded.`);
 
-        const registeredPluginContext = app.registerPlugin(plugin.name, plugin.iframe.contentWindow!, plugin.url);
-        
-        
+        app.registerPlugin(plugin.name, plugin.iframe.contentWindow!, plugin.url);        
       },
     });
 

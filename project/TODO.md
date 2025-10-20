@@ -5,6 +5,10 @@
 - Update docs and README.md
 - Move app devtools to another repo
 
+- Validating version already installed for joining a server that needs a specific version of a plugin
+- Sign and verify plugins
+- Create a plugin marketplace with rating and reviews
+
 - Add permission system for plugin fetch and event systems
   - (only explicitly allowed plugins can fetch and emit certain events)
   - for e.g., the plugin hello-world can only listen to event 'theme-toggle.onThemeChange' (which can come from theme-toggle plugin), if the user configured explicitly app settings for hello-world to listen to events 'theme-toggle.onThemeChange' or 'theme-toggle'.

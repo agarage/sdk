@@ -1,5 +1,6 @@
 import { createContext, useContext, type Accessor, type JSX } from "solid-js";
 import type { LoadedPlugin, RegisteredPluginContext } from "../types";
+import type { EventMessage } from "shared-sdk";
 
 interface PluginManagerContextType {
   plugins: Accessor<LoadedPlugin[]>;
@@ -31,11 +32,12 @@ function PluginManagerProvider(props: PluginManagerProviderProps) {
 
     const registeredPluginContext: RegisteredPluginContext = {
       emit: (eventType: string, payload?: any) => {
-        plugin.iframe.contentWindow?.postMessage({
+        const window = plugin.iframe.contentWindow;
+        window?.postMessage({
           type: 'event',
           eventType,
           payload,
-        }, plugin.url);
+        } satisfies EventMessage, plugin.url);
       },
     };
     

@@ -153,22 +153,12 @@ export function createApp({ allowedOrigins = [] }: AppConfig): AppSDK {
 
   window.addEventListener('message', messageListener);
 
-  const createRegisteredPlugin = (_namespace: string, window: Window, origin: string): RegisteredPluginContext => {
-    return {
-      emit: (eventType: string, payload?: any) => {
-        window.postMessage({ type: 'event', eventType, payload } satisfies EventMessage, origin);
-      },
-    };
-  };
-
   return {
     registerPlugin: (namespace, window, origin) => {
       pluginRegistry.set(namespace, { window, origin });
       if (!allowedOrigins.includes(origin)) {
         console.warn(`[app] Plugin origin ${origin} is not in allowedOrigins.`);
       }
-
-      return createRegisteredPlugin(namespace, window, origin);
     },
 
     handle: (requestType, handler) => {
